@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trucking Rate Request - Submit</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 24px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 13px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #444;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .label-hint {
+            font-weight: normal;
+            color: #888;
+            font-size: 11px;
+        }
+
+        .required::after {
+            content: " *";
+            color: #dc3545;
+        }
+
+        select, input[type="text"], input[type="email"], textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        select:focus, input[type="text"]:focus, input[type="email"]:focus, textarea:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .urgency-options {
+            display: flex;
+            gap: 10px;
+        }
+
+        .urgency-option {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .urgency-option:hover {
+            border-color: #4facfe;
+        }
+
+        .urgency-option.selected {
+            border-color: #4facfe;
+            background: #e8f4ff;
+        }
+
+        .urgency-option.urgent.selected {
+            border-color: #ffc107;
+            background: #fff8e1;
+        }
+
+        .urgency-option.rush.selected {
+            border-color: #dc3545;
+            background: #ffebee;
+        }
+
+        .urgency-option input {
+            display: none;
+        }
+
+        .urgency-label {
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .urgency-desc {
+            font-size: 11px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        /* Vendor suggestions */
+        .vendors-container {
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            background: #fafafa;
+        }
+
+        .vendor-item {
+            padding: 10px 12px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .vendor-item:hover {
+            background: #e8f4ff;
+        }
+
+        .vendor-item:last-child {
+            border-bottom: none;
+        }
+
+        .vendor-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .vendor-name {
+            font-size: 13px;
+            color: #333;
+        }
+
+        .no-vendors {
+            padding: 20px;
+            text-align: center;
+            color: #888;
+            font-style: italic;
+            font-size: 13px;
+        }
+
+        .selected-count {
+            font-size: 12px;
+            color: #4facfe;
+            margin-top: 6px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #4facfe;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #3d9be8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            display: none;
+            margin-bottom: 20px;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            display: none;
+            margin-bottom: 20px;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* My Requests Section */
+        .my-requests {
+            margin-top: 20px;
+        }
+
+        h2 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .request-count {
+            background: #4facfe;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .request-item {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .request-route {
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .request-meta {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .request-urgency {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .request-urgency.normal {
+            background: #e0e0e0;
+            color: #666;
+        }
+
+        .request-urgency.urgent {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .request-urgency.rush {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .empty-requests {
+            text-align: center;
+            color: #888;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        .info-box {
+            background: #e8f4ff;
+            border-left: 4px solid #4facfe;
+            padding: 12px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+
+        .info-box p {
+            color: #333;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .submitter-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .submitter-section label {
+            margin-bottom: 8px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4facfe;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .setup-notice {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+
+        .setup-notice strong {
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="setupNotice" class="setup-notice" style="display: none;">
+            <strong>⚠️ Setup Required:</strong> JSONBin is not configured. Data will only be saved locally in this browser.
+            <br><small>See SETUP-INSTRUCTIONS.md to enable cloud sync.</small>
+        </div>
+
+        <div id="successMessage" class="success-message">
+            ✓ Your request has been submitted successfully!
+        </div>
+        <div id="errorMessage" class="error-message">
+            ✕ Error submitting request. Please try again.
+        </div>
+
+        <div class="panel">
+            <h1>🚛 Trucking Rate Request</h1>
+            <p class="subtitle">Submit a request for drayage rate quotes</p>
+
+            <div class="submitter-section">
+                <label for="submitterName" class="required">Your Name</label>
+                <input type="text" id="submitterName" placeholder="Enter your name" required>
+            </div>
+
+            <form id="requestForm">
+                <div class="form-group">
+                    <label for="origin" class="required">Origin Location</label>
+                    <select id="origin" required>
+                        <option value="">-- Select Origin --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="destination" class="required">Destination Location</label>
+                    <input type="text" id="destination" placeholder="e.g., Chicago, IL" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Priority Level</label>
+                    <div class="urgency-options">
+                        <label class="urgency-option selected" data-value="normal">
+                            <input type="radio" name="urgency" value="normal" checked>
+                            <div class="urgency-label">Normal</div>
+                            <div class="urgency-desc">Standard timing</div>
+                        </label>
+                        <label class="urgency-option urgent" data-value="urgent">
+                            <input type="radio" name="urgency" value="urgent">
+                            <div class="urgency-label">Urgent</div>
+                            <div class="urgency-desc">Need soon</div>
+                        </label>
+                        <label class="urgency-option rush" data-value="rush">
+                            <input type="radio" name="urgency" value="rush">
+                            <div class="urgency-label">Rush</div>
+                            <div class="urgency-desc">ASAP</div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="additionalDetails">Additional Details <span class="label-hint">(optional)</span></label>
+                    <textarea id="additionalDetails" placeholder="e.g., Container size, special requirements, timeline..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="additionalCC">Additional CC Emails <span class="label-hint">(optional)</span></label>
+                    <input type="text" id="additionalCC" placeholder="e.g., john@example.com, jane@example.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Suggest Vendors <span class="label-hint">(optional - procurement will make final selection)</span></label>
+                    <div class="vendors-container" id="vendorsContainer">
+                        <div class="no-vendors">Select an origin to see available vendors</div>
+                    </div>
+                    <div class="selected-count" id="selectedCount"></div>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="btn-primary" id="submitBtn">📤 Submit Request</button>
+                    <button type="button" class="btn-secondary" onclick="clearForm()">Clear</button>
+                </div>
+            </form>
+
+            <div class="info-box">
+                <p><strong>What happens next?</strong><br>
+                Your request will be reviewed by the procurement team who will reach out to vendors for quotes. You'll receive responses via email.</p>
+            </div>
+        </div>
+
+        <!-- My Requests Section -->
+        <div class="panel my-requests">
+            <h2>📋 My Requests <span class="request-count" id="requestCount">0</span></h2>
+            <div id="myRequestsList">
+                <div class="loading"><span class="spinner"></span>Loading your requests...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========================================
+        // CONFIGURATION - UPDATE THESE VALUES
+        // ========================================
+        // Get your free API key at https://jsonbin.io
+        const JSONBIN_BIN_ID = 'YOUR_BIN_ID_HERE';  // e.g., '507f1f77bcf86cd799439011'
+        const JSONBIN_API_KEY = 'YOUR_API_KEY_HERE'; // e.g., '$2b$10$...'
+
+        // Check if JSONBin is configured
+        const isJsonBinConfigured = JSONBIN_BIN_ID !== 'YOUR_BIN_ID_HERE' && JSONBIN_API_KEY !== 'YOUR_API_KEY_HERE';
+
+        // Contact/Vendor data by terminal (company names only for ops view)
+        const contactData = {"Savannah, GA": [{"company": "AGX Freight Intermodal", "email": "RateRequests@securetransportstorage.com", "contact": "Tara Bilyeu"}, {"company": "Allegiant Intermodal (Evans)", "email": "MJA@ALLEGIANTINTERMODAL.COM", "contact": "GROUP"}, {"company": "ATS - SaltWater Logistics", "email": "dispatch@saltwaterlogistics.com", "contact": "Rob"}, {"company": "GSC National Transportation, Inc.", "email": "imiller@gogsc.com", "contact": "Israel Miller"}, {"company": "LCG Freight Inc", "email": "t.wilson@lcgfreight.com", "contact": "Tyler Wilson"}, {"company": "LCG Freight Inc", "email": "salesGroup@lcgfreight.com", "contact": "Tyler Wilson"}, {"company": "Southern Cartage", "email": "sales@southerncompanies.net", "contact": "Danielys (Dani)"}, {"company": "TCW, Inc", "email": "lconnell@tcwonline.com", "contact": "Luke Connell"}, {"company": "Triumph Intermodal Co Inc.", "email": "dispatch@triumph-sav.com", "contact": "(group email)"}, {"company": "Container Port Group", "email": "Quote@Containerport.com", "contact": "Quote Team"}], "Chicago, IL": [{"company": "All Points Transport", "email": "ail@allpointstransport.com", "contact": "Dan Leone"}, {"company": "GDX Inc.", "email": "dispatchteam@gdxinc.com", "contact": "David Guzman"}, {"company": "PB Industries", "email": "rate@pbindustries.com", "contact": "Heejin Kim"}, {"company": "United Intermodal Carriers, Inc.", "email": "CS@UICARRIER.COM", "contact": "CUSTOMER SERVICE"}, {"company": "Unix Intermodal Inc", "email": "anas.saleh@unixintermodal.com", "contact": "Anas Saleh"}, {"company": "Rush Intermodal", "email": "neworders@rushintermodal.com", "contact": "Various"}, {"company": "Gulf Winds International", "email": "Pricing@gwii.com", "contact": "Pricing"}, {"company": "NFI Industries", "email": "pricing@calcartage.com", "contact": "Pricing"}, {"company": "Museful Trucking Co.", "email": "rate@musefulco.com", "contact": "Jacob Yang/Annie Park"}], "St.Louis, MO": [{"company": "All Points Transport", "email": "RWA@allpointstransport.com", "contact": "Sara Garrison"}, {"company": "Avenue Logistics", "email": "drayrates@avenuelogistics.com", "contact": ""}, {"company": "Horizon Freight System", "email": "StLouis@HorizonFreightSystem.com", "contact": "Dawn / Chris"}, {"company": "ITS Logistics LLC", "email": "KerryApex-IM@its4logistics.com; cbourns@its4logistics.com", "contact": "Team Distribution List // Cameron Bourns"}, {"company": "HLI GOVERNMENT SERVICES", "email": "Jenna.Carprue@solveralogistics.com", "contact": "Jenna Carprue"}], "Tampa, FL": [{"company": "AMERICA 1", "email": "JOHN@AMERICA1TAMPA.COM", "contact": "JOHN REDDERSON"}, {"company": "American Marine Express (AMX - TAMPA)", "email": "Centralflacs@amxtrans.com", "contact": "Emileigh Gilgen"}, {"company": "Cargomatic", "email": "yyin@cargomatic.com", "contact": "Yubin Yin"}, {"company": "Southern Cartage", "email": "sales@southerncompanies.net", "contact": "Danielys (Dani)"}, {"company": "TRX Inc.", "email": "tampa@trxtrucking.com", "contact": "Mary Lobdell"}, {"company": "Universal Intermodal Services, Inc.", "email": "intermodalpricing@universalintermodal.com", "contact": "Pricing Team"}], "Jacksonville, FL": [{"company": "American Marine Express (AMX - JAX)", "email": "Jaxcs@amxtrans.com", "contact": "Andrew Alba"}, {"company": "HORIZON SOUTH - JACKSONVILLE", "email": "JACKSONVILLE@HORIZONFREIGHTSYSTEM.COM", "contact": "SUSAN BERNARDING"}, {"company": "LCG Freight Inc", "email": "t.wilson@lcgfreight.com", "contact": "Tyler Wilson"}, {"company": "LCG Freight Inc", "email": "salesGroup@lcgfreight.com", "contact": "Tyler Wilson"}, {"company": "Port City Transportation", "email": "jax-dispatch@portcitytrans.com", "contact": "Russ Lewis/Brian Ray"}, {"company": "Southern Cartage", "email": "sales@southerncompanies.net", "contact": "Danielys (Dani)"}, {"company": "Container Port Group", "email": "Quote@Containerport.com", "contact": "Quote"}], "Miami/ Port Everglades": [{"company": "American Marine Express (AMX - MIAMI)", "email": "MIACS@amxtrans.com", "contact": "Ismael Escoto"}, {"company": "Delta Trucking", "email": "local-ops@delta-trucking.com", "contact": "Operations"}, {"company": "Eastern Drayage", "email": "troyd@easterndrayage.com", "contact": "Troy Deocharran"}, {"company": "Inland Express", "email": "robert.rullo@inlandexpress.net", "contact": "Robert Rullo"}, {"company": "QUALITY CONTAINER TRANSPORT", "email": "pricing@qualityct.com", "contact": "Luis M Sardinas"}, {"company": "Southern Cartage", "email": "sales@southerncompanies.net", "contact": "Danielys (Dani)"}], "Seattle, WA": [{"company": "Apex Freight LLC", "email": "greg.hudgens@apexfreghtwa.com", "contact": "Greg Hudgens"}, {"company": "Avenue Logistics", "email": "drayrates@avenuelogistics.com", "contact": ""}, {"company": "Forrest Logistics", "email": "spotquote@forrestlogistics.com", "contact": "Pricing Team"}, {"company": "Jet City trucking", "email": "bini@jetcitytrucking.com2063910529", "contact": "Biniam Habte"}, {"company": "KTI", "email": "ben.v@ktitrans.com", "contact": "Ben Vanthournout"}, {"company": "MEDLOG", "email": "us045-ck.pricing@medlog.com", "contact": "grou["}, {"company": "PNW Brokerage Inc", "email": "rates@pnwbrokerage.com", "contact": "Sergey"}, {"company": "Spirit Transport", "email": "Rates@Spirittransport.net", "contact": "Rates"}, {"company": "tCamelot", "email": "ops@tcamelot.com", "contact": "Operations"}, {"company": "AKR LOGISTICS LLC", "email": "akrlogisticsllc@gmail.com", "contact": "RAMAN HUNDAL"}, {"company": "Portland Container Repair", "email": "rates@pdxcontainer.com", "contact": ""}], "Tacoma, WA": [{"company": "Apex Freight LLC", "email": "greg.hudgens@apexfreghtwa.com", "contact": "Greg Hudgens"}, {"company": "Avenue Logistics", "email": "drayrates@avenuelogistics.com", "contact": ""}, {"company": "Forrest Logistics", "email": "spotquote@forrestlogistics.com", "contact": "Pricing Team"}, {"company": "Jet City trucking", "email": "bini@jetcitytrucking.com2063910529", "contact": "Biniam Habte"}, {"company": "PNW Brokerage Inc", "email": "rates@pnwbrokerage.com", "contact": "Sergey"}, {"company": "Spirit Transport", "email": "Rates@Spirittransport.net", "contact": "Rates"}, {"company": "tCamelot", "email": "ops@tcamelot.com", "contact": "Operations"}, {"company": "AKR LOGISTICS LLC", "email": "akrlogisticsllc@gmail.com", "contact": "RAMAN HUNDAL"}, {"company": "Portland Container Repair", "email": "rates@pdxcontainer.com", "contact": ""}], "Atlanta, GA": [{"company": "ARL  Transport", "email": "dispatch@arlnetwork.com", "contact": "SPOC Team"}, {"company": "Eastern Drayage", "email": "troyd@easterndrayage.com", "contact": "Troy Deocharran"}, {"company": "FORREST LOGISTICS", "email": "SPOTQUOTE@FORRESTLOGISTICS.COM", "contact": "TANYA & JAMELA"}, {"company": "Genesis Intermodal Services", "email": "george@genesisintermodal.com", "contact": "George Albritton"}, {"company": "Lightning Transportation Inc", "email": "rates@lightningtrans.com", "contact": "Rate Department"}, {"company": "New Age Logistics", "email": "elizabethm@newagelogistics.com", "contact": "Liz Murphy"}, {"company": "PBI", "email": "rate@pbindustries.com", "contact": "Heejin Kim"}, {"company": "Veterans Express,", "email": "VAG@VETXP.COM", "contact": "VAG@VETXP.COM"}, {"company": "Container Port Group", "email": "Quote@Containerport.com", "contact": "Quote Team"}], "Miami, FL": [{"company": "ARL  Transport", "email": "dispatch@arlnetwork.com", "contact": "SPOC Team"}], "El Paso, TX": [{"company": "Arrive Logistics", "email": "aabrego@arrivelogistics.com", "contact": "Aaron Abrego"}, {"company": "Avenue Logistics", "email": "drayrates@avenuelogistics.com", "contact": ""}, {"company": "Cargomatic", "email": "yyin@cargomatic.com", "contact": "Yubin Yin"}, {"company": "Trucking 2000", "email": "mayw@trucking2000.com; sales@trucking2000.com", "contact": "May"}, {"company": "WW Rowland Trucking Co", "email": "quote@wwrowland.com", "contact": "Mike Miller"}], "Mobile, AL": [{"company": "Avenue Logistics", "email": "drayrates@avenuelogistics.com", "contact": ""}, {"company": "C&K Trucking LLC  D/B/A Medlog Trucking", "email": "us045-ck.pricing@medlog.com", "contact": "group"}, {"company": "Easy Haul Intermodal", "email": "jwalker@ehintermodal.com", "contact": "Jimmy Walker"}, {"company": "Gulf Winds International", "email": "Pricing@gwii.com", "contact": "Pricing"}, {"company": "NFI Industries", "email": "pricing@calcartage.com", "contact": "Pricing"}, {"company": "Southern Intermodal Xpress, LLC ( SIX )", "email": "ramos@sixllc.net", "contact": "Ralph Amos"}, {"company": "TCW, Inc", "email": "lconnell@tcwonline.com", "contact": "Luke Connell"}, {"company": "Container Port Group", "email": "Quote@Containerport.com", "contact": "Quote Team"}], "Kansas City": [{"company": "C&K trucking", "email": "us045-ck.pricing@medlog.com", "contact": "Pricing group"}, {"company": "Kansas City Intermodal", "email": "rates@kcintermodal.com; dispatch@kcintermodal.com; sam@kcintermodal.com", "contact": "Sam"}, {"company": "MEDLOG", "email": "us045-ck.pricing@medlog.com", "contact": "Pricing group"}, {"company": "Horizon Freight System", "email": "kansascitydispatch@hznfinc.com", "contact": "David"}, {"company": "MARK-IT EXPRESS", "email": "kcrates@mark-itexpress.com", "contact": "Matt Belanus"}, {"company": "Calhoun Truck Lines", "email": "sales@calhountrucklines.com", "contact": "Kim Schwartz/Alex Doherty"}, {"company": "ITS Logistics LLC", "email": "KerryApex-IM@its4logistics.com; cbourns@its4logistics.com", "contact": "Team Distribution List // Cameron Bourns"}, {"company": "Mike & Joy Transportation /dba M&J Transporation INC", "email": "david.s@mjtranskc.com", "contact": "David Stuccker"}], "Cleveland, OH": [{"company": "C&K trucking", "email": "us045-ck.pricing@medlog.com", "contact": "Pricing group"}, {"company": "ARL Transport", "email": "dispatch@arlcleveland.com", "contact": "Kelly"}, {"company": "MEDLOG", "email": "us045-ck.pricing@medlog.com", "contact": "Pricing group"}, {"company": "AMX", "email": "cs@amxtrans.com", "contact": "Customer Service"}, {"company": "Horizon Freight System", "email": "CLEVELANDOPS@HZNFINC.COM", "contact": "DREAMA/SARA"}, {"company": "ITS Logistics LLC", "email": "KerryApex-IM@its4logistics.com; cbourns@its4logistics.com", "contact": "Team Distribution List // Cameron Bourns"}, {"company": "HLI GOVERNMENT SERVICES", "email": "Jenna.Carprue@solveralogistics.com", "contact": "Jenna Carprue"}], "Columbus, OH": [{"company": "C&K trucking", "email": "us045-ck.pricing@medlog.com", "contact": "Pricing group"}, {"company": "MEDLOG", "email": "us045-ck.pricing@medlog.com", "contact": "Pricing group"}, {"company": "Calhoun Truck Lines", "email": "sales@calhountrucklines.com", "contact": "Kim Schwartz/Khyrstyna Dymarchuk"}, {"company": "ITS Logistics LLC", "email": "KerryApex-IM@its4logistics.com; cbourns@its4logistics.com", "contact": "Team Distribution List // Cameron Bourns"}, {"company": "HLI GOVERNMENT SERVICES", "email": "Jenna.Carprue@solveralogistics.com", "contact": "Jenna Carprue"}], "Detroit, MI": [{"company": "C&K trucking", "email": "us045-ck.pricing@medlog.com", "contact": "Pricing group"}, {"company": "Soar Transport Group", "email": "topocean@soartransport.com", "contact": "Group Email"}, {"company": "MEDLOG", "email": "us045-ck.pricing@medlog.com", "contact": "Pricing group"}, {"company": "AMX", "email": "detcs@amxtrans.com", "contact": ""}, {"company": "ITS Logistics LLC", "email": "KerryApex-IM@its4logistics.com; cbourns@its4logistics.com", "contact": "Team Distribution List // Cameron Bourns"}, {"company": "HLI GOVERNMENT SERVICES", "email": "Jenna.Carprue@solveralogistics.com", "contact": "Jenna Carprue"}], "Indianapolis, IN": [{"company": "C&K trucking", "email": "us045-ck.pricing@medlog.com", "contact": "Pricing group"}, {"company": "Harbor Bridge Intermodal", "email": "dispatch@harborbridge.org", "contact": ""}, {"company": "MEDLOG", "email": "us045-ck.pricing@medlog.com", "contact": "Pricing group"}, {"company": "Horizon Freight System", "email": "indycs@rykilogistics.com", "contact": "Justin Bilbee & Rhonda Ferguson"}, {"company": "AMX", "email": "indycs@amxtrans.com", "contact": "Customer Service"}, {"company": "Avenue Logistics", "email": "drayrates@avenuelogistics.com", "contact": ""}, {"company": "Horizon Freight System", "email": "indycs@rykilogistics.com", "contact": "Justin Bilbee & Rhonda Ferguson"}, {"company": "ITS Logistics LLC", "email": "KerryApex-IM@its4logistics.com; cbourns@its4logistics.com", "contact": "Team Distribution List // Cameron Bourns"}], "New Orleans, LA": [{"company": "C&K Trucking LLC  D/B/A Medlog Trucking", "email": "us045-ck.pricing@medlog.com", "contact": "group"}, {"company": "Cargomatic", "email": "yyin@cargomatic.com", "contact": "Yubin Yin"}, {"company": "Eastern Drayage", "email": "troyd@easterndrayage.com", "contact": "Troy Deocharran"}, {"company": "Southern Intermodal Xpress, LLC ( SIX )", "email": "ramos@sixllc.net", "contact": "Ralph Amos"}, {"company": "TCW, Inc", "email": "lconnell@tcwonline.com", "contact": "Luke Connell"}, {"company": "TFWW (TForce Worldwide)", "email": "TopOcean@tfwwi.com", "contact": "Account Operations"}, {"company": "Container Port Group", "email": "Quote@Containerport.com", "contact": "Quote Team"}], "Dallas, TX": [{"company": "C&K Trucking LLC  D/B/A Medlog Trucking", "email": "us045-ck.pricing@medlog.com", "contact": "group"}, {"company": "Cargomatic", "email": "yyin@cargomatic.com", "contact": "Yubin Yin"}, {"company": "Eagle Systems Inc", "email": "eagledallas@eaglegroup.com", "contact": "Dallas Team"}, {"company": "Elite One Intermodal", "email": "Dallas@dfttx.com", "contact": "Team"}, {"company": "Genesis Intermodal Services", "email": "sales@genesisintermodal.com", "contact": "George Albritton and Zach Bayer"}, {"company": "Gulf Winds International", "email": "Pricing@gwii.com", "contact": "Pricing"}, {"company": "RoadOne IntermodaLogisitcs", "email": "lcabrera@roadone.com", "contact": "Larry Cabrera"}, {"company": "Sunburst Truck Lines", "email": "bleffert@sunburstusa.com", "contact": "Brittney Leffert"}, {"company": "Trucking 2000", "email": "mayw@trucking2000.com; sales@trucking2000.com", "contact": "May"}, {"company": "WW Rowland Trucking Co", "email": "quote@wwrowland.com; dispatch.dfw@wwrowland.com", "contact": "Mike Miller"}, {"company": "Container Port Group", "email": "Quote@Containerport.com", "contact": "Quote Team"}, {"company": "Horizon Freight System", "email": "Dallas@dfttx.com", "contact": "Team"}], "Norfolk, VA": [{"company": "Cargomatic", "email": "yyin@cargomatic.com", "contact": "Yubin Yin"}, {"company": "Devine Logistics", "email": "Cneal@devinelogisticsllc.com", "contact": "Carter Neal"}, {"company": "Devine Logistics", "email": "Mhaight@devinelogisticsllc.com", "contact": "Matt Haight"}, {"company": "Devine Logistics", "email": "Awade@devinelogisticsllc.com", "contact": "Andrew Wade"}, {"company": "GTL Transport Co.", "email": "swheeler@gtltransport.com", "contact": "Steve Wheeler"}, {"company": "LCG Freight Inc", "email": "t.wilson@lcgfreight.com", "contact": "Tyler Wilson"}, {"company": "LCG Freight Inc", "email": "salesGroup@lcgfreight.com", "contact": "Tyler Wilson"}, {"company": "Lightning Transportation Inc", "email": "rates@lightningtrans.com", "contact": "Rate Department"}, {"company": "Service Transfer Inc.", "email": "dwayne@servicetransfer.net", "contact": "Dwayne Paschall"}, {"company": "Container Port Group", "email": "Quote@Containerport.com", "contact": "Quote"}], "Wilmington, NC": [{"company": "Cargomatic", "email": "yyin@cargomatic.com", "contact": "Yubin Yin"}, {"company": "Dunavant", "email": "robert.clawson@dunavant.com", "contact": "Robert Clawson"}, {"company": "FORREST LOGISTICS", "email": "SPOTQUOTE@FORRESTLOGISTICS.COM", "contact": "TANYA & JAMELA"}, {"company": "Horizon (TRX Inc.)", "email": "igooch@rykilogistics.com", "contact": "IESHA GOOCH"}, {"company": "NFI Industries", "email": "pricing@calcartage.com", "contact": ""}, {"company": "Port City Transportation", "email": "jedwards@portcitytrans.com", "contact": "Jonathan Edwards"}, {"company": "Veterans Express", "email": "VWN@VETXP.COM", "contact": "VWN@VETXP.COM"}], "Houston, TX": [{"company": "Cargomatic", "email": "yyin@cargomatic.com", "contact": "Yubin Yin"}, {"company": "CRL TRUCKING LLC", "email": "carlos@crltrucking.com", "contact": "Carlos Linares"}, {"company": "Dunavant Trans Gulf Transportation LLC", "email": "laportesales@dunavant.com", "contact": "Greg Almaguer"}, {"company": "Gulf Winds International", "email": "Pricing@gwii.com", "contact": "Pricing"}, {"company": "LCG Freight", "email": "t.wilson@lcgfreight.com", "contact": "Tyler"}, {"company": "Sunburst Truck Lines", "email": "bleffert@sunburstusa.com", "contact": "Brittney Leffert"}, {"company": "Trucking 2000", "email": "mayw@trucking2000.com; sales@trucking2000.com", "contact": "May"}, {"company": "Container Port Group", "email": "Quote@Containerport.com", "contact": "Quote Team"}], "Denver, CO": [{"company": "Cargomatic", "email": "yyin@cargomatic.com", "contact": "Yubin Yin"}, {"company": "KTI", "email": "ben.v@ktitrans.com", "contact": "Ben Vanthournout"}, {"company": "Horizon Freight System", "email": "Denver@HorizonFreightSystem.com", "contact": "DayDay Hayes / William Buboltz / Nick Figgins"}, {"company": "Suntecktts", "email": "kln@suntecktts.com", "contact": "Yesica / Donald"}], "Salt Lake City, UT": [{"company": "Cargomatic", "email": "yyin@cargomatic.com", "contact": "Yubin Yin"}, {"company": "Cowan Logistics LLC", "email": "mboylston@cowanlogistics.com", "contact": "Michael Boylston"}, {"company": "Keyword Trucking LLC", "email": "rates@keywordtrucking.com", "contact": ""}, {"company": "Universal Intermodal", "email": "BAnderson@universallogistics.com; ALormand@universallogistics.com; SRSutahint@universalintermodal.com", "contact": "Brian Anderson/Allen Lormand"}, {"company": "Horizon Freight System", "email": "saltlakeops@trxtrucking.com", "contact": "Miguel Silva"}, {"company": "Suntecktts", "email": "kln@suntecktts.com", "contact": "Yesica / Donald"}], "Portland, WA": [{"company": "Cargomatic", "email": "yyin@cargomatic.com", "contact": "Yubin Yin"}, {"company": "KTI", "email": "ben.v@ktitrans.com", "contact": "Ben Vanthournout"}, {"company": "Northwest Container Service", "email": "truckdispatch@nwcontainer.com", "contact": "Paul Keeth"}, {"company": "SHIPPERS TRANSPORT EXPRESS", "email": "steportland@shipperstransport.com", "contact": "Dan DePaola"}, {"company": "STG", "email": "drayagepricing@stgusa.com", "contact": ""}, {"company": "TERMINAL TRANSFER", "email": "RATES@TERMINALTRANSFER.COM", "contact": "TAYLOR BRYANT"}, {"company": "Portland Container Repair", "email": "rates@pdxcontainer.com", "contact": ""}, {"company": "Suntecktts", "email": "kln@suntecktts.com", "contact": "Yesica / Donald"}], "Minneapolis/St.Paul, MN": [{"company": "Cobra Trans", "email": "cobradispatch@cobratrans.com", "contact": "Marcus Derickson"}, {"company": "KTI", "email": "ben.v@ktitrans.com", "contact": "Ben Vanthournout"}, {"company": "ITS Logistics LLC", "email": "KerryApex-IM@its4logistics.com; cbourns@its4logistics.com", "contact": "Team Distribution List // Cameron Bourns"}, {"company": "HLI GOVERNMENT SERVICES", "email": "Jenna.Carprue@solveralogistics.com", "contact": "Jenna Carprue"}], "El Paso/Santa Teresa": [{"company": "Cowan Logistics LLC", "email": "jswann@cowanlogistics.com", "contact": "Julia Swann"}], "Nashville, TN": [{"company": "Dunavant", "email": "robert.clawson@dunavant.com", "contact": "Robert Clawson"}, {"company": "Evans Delivery", "email": "eha@evansdelivery.com", "contact": "Alyssa Kirkpatrick / Steve Mahathey"}, {"company": "Horizon (TRX Inc.)", "email": "igooch@rykilogistics.com", "contact": "IESHA GOOCH"}, {"company": "STG", "email": "drayagepricing@stgusa.com", "contact": ""}, {"company": "TCW, Inc", "email": "lconnell@tcwonline.com", "contact": "Luke Connell"}, {"company": "TRX Inc.", "email": "nashville@rykilogistics.com", "contact": "IESHA GOOCH"}, {"company": "WW Rowland Trucking Co.", "email": "quote@wwrowland.com", "contact": "Kenny Stout"}], "Memphis, TN": [{"company": "Dunavant", "email": "robert.clawson@dunavant.com", "contact": "Robert Clawson"}, {"company": "Genesis Intermodal Services", "email": "george@genesisintermodal.com", "contact": "George Albritton"}, {"company": "Gulf Winds International", "email": "Pricing@gwii.com", "contact": "Pricing"}, {"company": "Mainstream Transportation", "email": "MiThomas@dart.net ; sbondra@dart.net", "contact": "Miranda and Shannon"}, {"company": "NEWHAWK XPRESS", "email": "NHM@NEWHAWKXPRESS.COM", "contact": ""}, {"company": "PBI", "email": "rate@pbindustries.com", "contact": "Heejin Kim"}, {"company": "U.S. Multimodal Group", "email": "KATO@portxlogistics.com", "contact": "Kirk Bualicex"}, {"company": "Universal Intermodal Services, Inc.", "email": "intermodalpricing@universalintermodal.com", "contact": "Pricing Team"}, {"company": "WW Rowland Trucking Co.", "email": "quote@wwrowland.com", "contact": "Jason Trent"}, {"company": "Container Port Group", "email": "Quote@Containerport.com", "contact": "Quote"}], "Charlotte, NC": [{"company": "Genesis Intermodal Services", "email": "george@genesisintermodal.com", "contact": "George Albritton"}, {"company": "STG", "email": "drayagepricing@stgusa.com", "contact": ""}, {"company": "Universal Intermodal Services, Inc.", "email": "intermodalpricing@universalintermodal.com", "contact": "Pricing Team"}, {"company": "Veterans Express", "email": "VCN@VETXP.COM", "contact": "VCN@VETXP.COM"}, {"company": "Container Port Group", "email": "Quote@Containerport.com", "contact": "Quote Team"}], "Charleston, SC": [{"company": "Genesis Intermodal Services", "email": "george@genesisintermodal.com", "contact": "George Albritton"}, {"company": "LCG Freight Inc", "email": "t.wilson@lcgfreight.com", "contact": "Tyler Wilson"}, {"company": "LCG Freight Inc", "email": "salesGroup@lcgfreight.com", "contact": "Tyler Wilson"}, {"company": "NFI Industries", "email": "pricing@calcartage.com", "contact": ""}, {"company": "QIC", "email": "CHARLESTON@QICLLC.NET", "contact": "HALEY"}, {"company": "QIC", "email": "CHARLESTON@QICLLC.NET", "contact": "HALEY"}, {"company": "Southern Cartage", "email": "sales@southerncompanies.net", "contact": "Danielys (Dani)"}, {"company": "US Services", "email": "Christ@usservicestrucking.com", "contact": "Chris"}, {"company": "Container Port Group", "email": "Quote@Containerport.com", "contact": "Quote Team"}], "Omaha/Council Bluffs, NE": [{"company": "KTI", "email": "ben.v@ktitrans.com", "contact": "Ben Vanthournout"}, {"company": "U.S. Multimodal Group", "email": "KATO@portxlogistics.com", "contact": "Kirk Bualicex"}, {"company": "Avenue Logistics", "email": "drayrates@avenuelogistics.com", "contact": ""}], "Louisville, KY": [{"company": "KTI", "email": "ben.v@ktitrans.com", "contact": "Ben Vanthournout"}, {"company": "Horizon Freight System", "email": "LOUCS@RYKILOGISTICS.COM", "contact": "DANNIELLE/TARA"}, {"company": "Land Trans (Evans Network)", "email": "lena.camara@landtrans.net", "contact": "lena.camara"}, {"company": "Horizon Freight System", "email": "LOUCS@RYKILOGISTICS.COM", "contact": "DANNIELLE/TARA"}, {"company": "HLI GOVERNMENT SERVICES", "email": "Jenna.Carprue@solveralogistics.com", "contact": "Jenna Carprue"}], "Greer, SC": [{"company": "TCW, Inc", "email": "lconnell@tcwonline.com", "contact": "Luke Connell"}, {"company": "Container Port Group", "email": "Quote@Containerport.com", "contact": "Quote Team"}], "Wilmington NC": [{"company": "TRX Inc.", "email": "mcneill.bo@gmail.com", "contact": "Bo McNeill"}], "Greer, GA": [{"company": "Universal Intermodal Services, Inc.", "email": "intermodalpricing@universalintermodal.com", "contact": "Pricing Team"}], "Cincinnati, OH": [{"company": "WM. Hafer Drayage", "email": "hafermr@hafertrucking.com", "contact": "Various"}, {"company": "Horizon Freight System", "email": "CINCIOPS@HZNFINC.COM", "contact": "KRISTA"}, {"company": "AMX", "email": "cincycs@amxtrans.com", "contact": "Customer Service"}, {"company": "Horizon Freight System", "email": "CINCIOPS@HZNFINC.COM", "contact": "KRISTA"}, {"company": "HLI GOVERNMENT SERVICES", "email": "Jenna.Carprue@solveralogistics.com", "contact": "Jenna Carprue"}], "Minneapolis, MN": [{"company": "Horizon Freight System", "email": "Minneapolis@horizonfreightsystem.com", "contact": "Group"}, {"company": "Horizon Freight System", "email": "minneapolis@horizonfreightsystem.com", "contact": "Jeffery Kabella"}, {"company": "Calhoun Truck Lines", "email": "sales@calhountrucklines.com", "contact": "Kim Schwartz/Khyrstyna Dymarchuk"}], "Baltimore, MD": [{"company": "Gulf Winds International", "email": "Pricing@gwii.com", "contact": "Pricing"}, {"company": "Lightning Transportation Inc", "email": "rates@lightningtrans.com", "contact": "rates@lightningtrans.com"}, {"company": "MEDLOG", "email": "us045-ck.pricing@medlog.com", "contact": "group"}, {"company": "Eastern Drayage", "email": "troyd@easterndrayage.com", "contact": "Troy Deocharran"}, {"company": "ITS Logistics LLC", "email": "KerryApex-IM@its4logistics.com; cbourns@its4logistics.com", "contact": "Team Distribution List // Cameron Bourns"}, {"company": "Daylight Logistics Inc", "email": "Mahendra@daylightlogisticsinc.com", "contact": "Mahendra Seoupaul"}], "New York, NY": [{"company": "MEDLOG", "email": "us045-ck.pricing@medlog.com", "contact": "group"}, {"company": "Eastern Drayage", "email": "troyd@easterndrayage.com", "contact": "Troy Deocharran"}, {"company": "Port24", "email": "cs@port24.com", "contact": "Ana Curbelo"}, {"company": "JAAP", "email": "sales@jaaptrucking.com", "contact": "John Gan"}, {"company": "ITS Logistics LLC", "email": "KerryApex-IM@its4logistics.com; cbourns@its4logistics.com", "contact": "Team Distribution List // Cameron Bourns"}, {"company": "E-Trans Inc.", "email": "stephanie@etranstruck.com", "contact": "Stephanie"}, {"company": "All Season Network Inc", "email": "trucking@allseasonusa.com", "contact": "Ben"}, {"company": "Daylight Logistics Inc", "email": "Mahendra@daylightlogisticsinc.com", "contact": "Mahendra Seoupaul"}], "Omaha/Council Bluffs": [{"company": "Horizon Freight System", "email": "omaha@horizonfreightsystem.com", "contact": "DayDay"}, {"company": "Universal Intermodal Services, Inc.", "email": "teamcouncilbluffs@universalintermodal.com", "contact": "Andrew Lester"}, {"company": "Calhoun Truck Lines", "email": "sales@calhountrucklines.com", "contact": "Kim Schwartz/Alex Doherty"}, {"company": "ITS Logistics LLC", "email": "KerryApex-IM@its4logistics.com; cbourns@its4logistics.com", "contact": "Team Distribution List // Cameron Bourns"}, {"company": "HLI GOVERNMENT SERVICES", "email": "Jenna.Carprue@solveralogistics.com", "contact": "Jenna Carprue"}], "Buffalo, NY": [{"company": "ARL Transport", "email": "arlbuffalo@arlnetwork.com", "contact": "JANICE BRESS"}, {"company": "U.S. Multimodal Group - Parent company", "email": "KATO@portxlogistics.com", "contact": "Kirk Bualicex"}, {"company": "HLI GOVERNMENT SERVICES", "email": "Jenna.Carprue@solveralogistics.com", "contact": "Jenna Carprue"}], "Philadelphia, PA": [{"company": "Eastern Drayage", "email": "troyd@easterndrayage.com", "contact": "Troy Deocharran"}, {"company": "Cowan Logistics LLC", "email": "jswann@cowanlogistics.com", "contact": "Julia Swann"}, {"company": "U.S. Multimodal Group - Parent company", "email": "KATO@portxlogistics.com", "contact": "Kirk Bualicex"}, {"company": "Horizon Freight System", "email": "PatG@hznfinc.com", "contact": "Pat Grisoff"}], "Worcester, MA": [{"company": "ITS Logistics LLC", "email": "KerryApex-IM@its4logistics.com; cbourns@its4logistics.com", "contact": "Team Distribution List // Cameron Bourns"}, {"company": "Hale Intermodal", "email": "mnh@haleintermodal.com", "contact": "GROUP EMAIL"}, {"company": "SCHNEIDER", "email": "sipiorskik@schneider.com", "contact": "Kristy Sipiorski"}], "Boston, MA": [{"company": "ITS Logistics LLC", "email": "KerryApex-IM@its4logistics.com; cbourns@its4logistics.com", "contact": "Team Distribution List // Cameron Bourns"}, {"company": "Hale Intermodal", "email": "mnh@haleintermodal.com", "contact": "GROUP EMAIL"}, {"company": "Horizon Freight System", "email": "KatherineV@HorizonFreightSystem.com", "contact": "Katie Valerie"}, {"company": "RoadOne IntermodaLogisitcs", "email": "nerates@roadone.com", "contact": "Ellie Brown"}, {"company": "Ravan Transit, LLC", "email": "Quotes@ravantransit.com", "contact": "John \"Yianni\" Ravanis"}], "Pittsburgh, PA": [{"company": "Cowan Logistics LLC", "email": "jswann@cowanlogistics.com", "contact": "Julia Swann"}, {"company": "SCHNEIDER", "email": "sipiorskik@schneider.com", "contact": "Kristy Sipiorski"}], "Los Angeles, CA": [{"company": "Fitted Transportation", "email": "inquiries@fittedtransport.com", "contact": "Jesus Hernandez"}, {"company": "J&S Logistics", "email": "dispatch@jnslogistic.com", "contact": "Gaby Dorado"}, {"company": "FRANCO TRUCKING", "email": "Francisco@francotruckinginc.com", "contact": "Francisco Franco"}, {"company": "ELEV8 TRANSPORTATION LLC", "email": "heriberto@elev8transportation.com / sabrina@elev8transportation.com", "contact": "Heriberto Perez / Sabrina Perez"}, {"company": "Mid Lane Carriers", "email": "dispatch@midlanecarriers.com", "contact": "Justin Lee"}, {"company": "NGL Logistics, LLC", "email": "dispatch@ngllogistics.com", "contact": "JJ Lee"}, {"company": "Hight Logistics Inc.", "email": "Rates@hightlogistics.us", "contact": "Luis Juarez"}, {"company": "Trucking 2000", "email": "jeccyl@trucking2000.com", "contact": "Jeccy"}], "Oakland, CA": [{"company": "Capital Containers", "email": "Capital Containers <capitalcontainers@gmail.com>", "contact": ""}, {"company": "CJ DRAGON TRANSPORTATION INC", "email": "DERRICKPAN@CJDTRANS.COM", "contact": "DERRICK PAN"}, {"company": "Fundis", "email": "ORDER@NEVCALTRU.COM", "contact": "JEN PEARCE"}, {"company": "SK TRANSPORTATION, INC.", "email": "tracy@sktrans.net", "contact": "Tracy Li"}, {"company": "ITS Logistics LLC", "email": "KerryApex-IM@its4logistics.com // cbourns@its4logistics.com", "contact": "Team Distribution List // Cameron Bourns"}, {"company": "UNITED BRIDGE TRUCKING", "email": "dispatch@unitedbridgetruckingcorp.com", "contact": "Elaine Li"}, {"company": "FORREST LOGISTICS", "email": "SPOTQUOTE@FORRESTLOGISTICS.COM", "contact": "TANYA/JAMELA"}, {"company": "Jhutty Tranz Inc", "email": "jeffwilliam@jhuttytranz.us", "contact": "JEFF"}, {"company": "Universal Logistics", "email": "MShort@universallogsitics.com", "contact": "Melissa Short"}, {"company": "Wings Inc", "email": "www.wingsinc@gmail.com", "contact": "Peter Choy"}]};
+
+        // Terminals list
+        const terminals = ["Atlanta, GA", "Baltimore, MD", "Boston, MA", "Buffalo, NY", "Charleston, SC", "Charlotte, NC", "Chicago, IL", "Cincinnati, OH", "Cleveland, OH", "Columbus, OH", "Dallas, TX", "Denver, CO", "Detroit, MI", "El Paso, TX", "El Paso/Santa Teresa", "Greer, GA", "Greer, SC", "Houston, TX", "Indianapolis, IN", "Jacksonville, FL", "Kansas City", "Los Angeles, CA", "Louisville, KY", "Memphis, TN", "Miami, FL", "Miami/ Port Everglades", "Minneapolis, MN", "Minneapolis/St.Paul, MN", "Mobile, AL", "Nashville, TN", "New Orleans, LA", "New York, NY", "Norfolk, VA", "Oakland, CA", "Omaha/Council Bluffs", "Omaha/Council Bluffs, NE", "Philadelphia, PA", "Pittsburgh, PA", "Portland, WA", "Salt Lake City, UT", "Savannah, GA", "Seattle, WA", "St.Louis, MO", "Tacoma, WA", "Tampa, FL", "Wilmington NC", "Wilmington, NC", "Worcester, MA"];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Show setup notice if not configured
+            if (!isJsonBinConfigured) {
+                document.getElementById('setupNotice').style.display = 'block';
+            }
+
+            // Load saved name
+            const savedName = localStorage.getItem('submitterName');
+            if (savedName) {
+                document.getElementById('submitterName').value = savedName;
+            }
+
+            // Populate origin dropdown
+            const originSelect = document.getElementById('origin');
+            terminals.forEach(terminal => {
+                const option = document.createElement('option');
+                option.value = terminal;
+                option.textContent = terminal;
+                originSelect.appendChild(option);
+            });
+
+            // Origin change handler
+            originSelect.addEventListener('change', function() {
+                updateVendorsList(this.value);
+            });
+
+            // Urgency option handlers
+            document.querySelectorAll('.urgency-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('.urgency-option').forEach(o => o.classList.remove('selected'));
+                    this.classList.add('selected');
+                    this.querySelector('input').checked = true;
+                });
+            });
+
+            // Form submit handler
+            document.getElementById('requestForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                submitRequest();
+            });
+
+            // Save name on change
+            document.getElementById('submitterName').addEventListener('change', function() {
+                localStorage.setItem('submitterName', this.value);
+            });
+
+            // Load my requests
+            loadMyRequests();
+        });
+
+        function updateVendorsList(terminal) {
+            const container = document.getElementById('vendorsContainer');
+            const selectedCountDiv = document.getElementById('selectedCount');
+
+            if (!terminal || !contactData[terminal]) {
+                container.innerHTML = '<div class="no-vendors">Select an origin to see available vendors</div>';
+                selectedCountDiv.textContent = '';
+                return;
+            }
+
+            const vendors = contactData[terminal];
+            // Get unique company names
+            const uniqueCompanies = [...new Set(vendors.map(v => v.company))];
+
+            let html = '';
+            uniqueCompanies.forEach((company, index) => {
+                html += `
+                    <div class="vendor-item" onclick="toggleVendor(${index})">
+                        <input type="checkbox" id="vendor_${index}" data-company="${company}">
+                        <span class="vendor-name">${company}</span>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            updateSelectedCount();
+        }
+
+        function toggleVendor(index) {
+            const checkbox = document.getElementById(`vendor_${index}`);
+            checkbox.checked = !checkbox.checked;
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const checkboxes = document.querySelectorAll('#vendorsContainer input[type="checkbox"]:checked');
+            const selectedCountDiv = document.getElementById('selectedCount');
+            const count = checkboxes.length;
+            selectedCountDiv.textContent = count > 0 ? `${count} vendor(s) suggested` : '';
+        }
+
+        function getSelectedVendors() {
+            const checkboxes = document.querySelectorAll('#vendorsContainer input[type="checkbox"]:checked');
+            return Array.from(checkboxes).map(cb => cb.dataset.company);
+        }
+
+        // JSONBin API functions
+        async function fetchRequests() {
+            if (!isJsonBinConfigured) {
+                return JSON.parse(localStorage.getItem('rateRequests') || '[]');
+            }
+
+            try {
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+                    headers: {
+                        'X-Access-Key': JSONBIN_API_KEY
+                    }
+                });
+                const data = await response.json();
+                return data.record.requests || [];
+            } catch (error) {
+                console.error('Error fetching from JSONBin:', error);
+                return JSON.parse(localStorage.getItem('rateRequests') || '[]');
+            }
+        }
+
+        async function saveRequests(requests) {
+            // Always save to localStorage as backup
+            localStorage.setItem('rateRequests', JSON.stringify(requests));
+
+            if (!isJsonBinConfigured) {
+                return true;
+            }
+
+            try {
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Access-Key': JSONBIN_API_KEY
+                    },
+                    body: JSON.stringify({ requests: requests })
+                });
+                return response.ok;
+            } catch (error) {
+                console.error('Error saving to JSONBin:', error);
+                return false;
+            }
+        }
+
+        async function submitRequest() {
+            const submitterName = document.getElementById('submitterName').value.trim();
+            const origin = document.getElementById('origin').value;
+            const destination = document.getElementById('destination').value.trim();
+            const urgency = document.querySelector('input[name="urgency"]:checked').value;
+            const additionalDetails = document.getElementById('additionalDetails').value.trim();
+            const additionalCC = document.getElementById('additionalCC').value.trim();
+            const suggestedVendors = getSelectedVendors();
+
+            if (!submitterName) {
+                alert('Please enter your name.');
+                document.getElementById('submitterName').focus();
+                return;
+            }
+
+            if (!origin || !destination) {
+                alert('Please select an origin and enter a destination.');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+
+            const requestData = {
+                id: Date.now(),
+                submitterName,
+                origin,
+                destination,
+                urgency,
+                additionalDetails,
+                additionalCC,
+                suggestedVendors: suggestedVendors.join(', '),
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                const requests = await fetchRequests();
+                requests.push(requestData);
+                await saveRequests(requests);
+                showSuccess();
+            } catch (error) {
+                console.error('Error submitting request:', error);
+                document.getElementById('errorMessage').classList.add('show');
+                setTimeout(() => {
+                    document.getElementById('errorMessage').classList.remove('show');
+                }, 4000);
+            }
+
+            submitBtn.disabled = false;
+            submitBtn.textContent = '📤 Submit Request';
+        }
+
+        function showSuccess() {
+            const successMsg = document.getElementById('successMessage');
+            successMsg.classList.add('show');
+
+            // Clear form
+            document.getElementById('destination').value = '';
+            document.getElementById('additionalDetails').value = '';
+            document.getElementById('additionalCC').value = '';
+            document.querySelectorAll('.urgency-option').forEach(o => o.classList.remove('selected'));
+            document.querySelector('.urgency-option[data-value="normal"]').classList.add('selected');
+            document.querySelector('input[name="urgency"][value="normal"]').checked = true;
+            document.querySelectorAll('#vendorsContainer input[type="checkbox"]').forEach(cb => cb.checked = false);
+            updateSelectedCount();
+
+            setTimeout(() => {
+                successMsg.classList.remove('show');
+            }, 4000);
+
+            loadMyRequests();
+        }
+
+        async function loadMyRequests() {
+            const submitterName = document.getElementById('submitterName').value.trim();
+            const listDiv = document.getElementById('myRequestsList');
+            const countSpan = document.getElementById('requestCount');
+
+            const allRequests = await fetchRequests();
+            const myRequests = submitterName
+                ? allRequests.filter(r => r.submitterName && r.submitterName.toLowerCase() === submitterName.toLowerCase())
+                : [];
+
+            displayRequests(myRequests.reverse());
+        }
+
+        function displayRequests(requests) {
+            const listDiv = document.getElementById('myRequestsList');
+            const countSpan = document.getElementById('requestCount');
+
+            countSpan.textContent = requests.length;
+
+            if (requests.length === 0) {
+                listDiv.innerHTML = '<div class="empty-requests">No requests submitted yet.</div>';
+                return;
+            }
+
+            let html = '';
+            requests.slice(0, 10).forEach(req => {
+                const date = new Date(req.timestamp).toLocaleDateString();
+                html += `
+                    <div class="request-item">
+                        <div class="request-route">
+                            ${req.origin} → ${req.destination}
+                            <span class="request-urgency ${req.urgency}">${req.urgency.toUpperCase()}</span>
+                        </div>
+                        <div class="request-meta">
+                            Submitted ${date}
+                            ${req.additionalDetails ? ` • ${req.additionalDetails.substring(0, 50)}${req.additionalDetails.length > 50 ? '...' : ''}` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            listDiv.innerHTML = html;
+        }
+
+        function clearForm() {
+            document.getElementById('requestForm').reset();
+            document.getElementById('vendorsContainer').innerHTML = '<div class="no-vendors">Select an origin to see available vendors</div>';
+            document.getElementById('selectedCount').textContent = '';
+            document.querySelectorAll('.urgency-option').forEach(o => o.classList.remove('selected'));
+            document.querySelector('.urgency-option[data-value="normal"]').classList.add('selected');
+        }
+
+        // Reload requests when name changes
+        document.getElementById('submitterName').addEventListener('input', function() {
+            loadMyRequests();
+        });
+    </script>
+</body>
+</html>
