@@ -458,6 +458,13 @@
         // Check if JSONBin is configured
         const isJsonBinConfigured = JSONBIN_BIN_ID !== 'YOUR_BIN_ID_HERE' && JSONBIN_API_KEY !== 'YOUR_API_KEY_HERE';
 
+        // Push notification (ntfy.sh) sent each time a request is submitted.
+        // Subscribe to this topic in the ntfy app to get alerts. Anyone who
+        // knows the topic name can read it, so keep it hard to guess.
+        // Set to '' to turn notifications off.
+        const NTFY_TOPIC = 'kapex-dray-requests-fbe170c7b2';
+        const NTFY_CLICK_URL = 'https://boomervazquez.github.io/Admin-Dash-DRAY/'; // opened when the notification is tapped
+
         // Office CC email mapping
         const officeEmails = {
             "NYC": "US.NYC.KAPEX.OID@kln.com",
@@ -620,6 +627,35 @@
             }
         }
 
+        // Fire-and-forget: a failed notification never blocks the submission.
+        // Posted as JSON to the ntfy root with a plain-text body, so the
+        // browser sends it without a CORS preflight.
+        function sendNewRequestNotification(req) {
+            if (!NTFY_TOPIC) return;
+
+            const details = req.additionalDetails.length > 300
+                ? req.additionalDetails.substring(0, 300) + '...'
+                : req.additionalDetails;
+            const lines = [
+                `Office: ${req.office}`,
+                req.referenceNo ? `Ref: ${req.referenceNo}` : '',
+                req.suggestedVendors ? `Suggested: ${req.suggestedVendors}` : '',
+                details
+            ].filter(Boolean);
+
+            fetch('https://ntfy.sh/', {
+                method: 'POST',
+                body: JSON.stringify({
+                    topic: NTFY_TOPIC,
+                    title: `New rate request: ${req.origin} → ${req.destination}`,
+                    message: lines.join('\n'),
+                    tags: ['truck'],
+                    click: NTFY_CLICK_URL
+                }),
+                keepalive: true // still delivered if the tab is closed right after submitting
+            }).catch(error => console.error('ntfy notification failed:', error));
+        }
+
         async function submitRequest() {
             const office = document.getElementById('office').value;
             const origin = document.getElementById('origin').value;
@@ -669,7 +705,9 @@
             try {
                 const requests = await fetchRequests();
                 requests.push(requestData);
-                await saveRequests(requests);
+                if (await saveRequests(requests)) {
+                    sendNewRequestNotification(requestData);
+                }
                 showSuccess();
             } catch (error) {
                 console.error('Error submitting request:', error);
