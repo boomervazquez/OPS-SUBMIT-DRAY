@@ -450,20 +450,19 @@
 
     <script>
         // ========================================
-        // CONFIGURATION - UPDATE THESE VALUES
+        // CONFIGURATION
         // ========================================
-        const JSONBIN_BIN_ID = '69b86facb7ec241ddc74832e';
-        const JSONBIN_API_KEY = '$2a$10$GIPCv5huX.z3PjEX9sI7tuDSZL/0V3HG/n62uGTUx0mzR55kjzG8a';
-
-        // Check if JSONBin is configured
-        const isJsonBinConfigured = JSONBIN_BIN_ID !== 'YOUR_BIN_ID_HERE' && JSONBIN_API_KEY !== 'YOUR_API_KEY_HERE';
+        // Requests are saved through the Dray API on this same site
+        // (kapexspotdray.com/api), which keeps the request queue. No keys
+        // live in this page.
+        const DRAY_API = '/api';
 
         // Push notification (ntfy.sh) sent each time a request is submitted.
         // Subscribe to this topic in the ntfy app to get alerts. Anyone who
         // knows the topic name can read it, so keep it hard to guess.
         // Set to '' to turn notifications off.
         const NTFY_TOPIC = 'kapex-dray-requests-fbe170c7b2';
-        const NTFY_CLICK_URL = 'https://boomervazquez.github.io/Admin-Dash-DRAY/'; // opened when the notification is tapped
+        const NTFY_CLICK_URL = 'https://admin.kapexspotdray.com/'; // opened when the notification is tapped
 
         // Office CC email mapping
         const officeEmails = {
@@ -485,11 +484,6 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            // Show setup notice if not configured
-            if (!isJsonBinConfigured) {
-                document.getElementById('setupNotice').style.display = 'block';
-            }
-
             // Load saved office
             const savedOffice = localStorage.getItem('userOffice');
             if (savedOffice) {
@@ -574,161 +568,76 @@
         }
 
         // ========================================
-        // JSONBin reads (hedged + timed out) - same as the Admin Dash
+        // Request queue (Dray API)
         // ========================================
-        // JSONBin's response time is very erratic: the same small bin can
-        // answer in half a second or hang for 30s+ (sometimes ending in a
-        // 520/522). Reads start a backup request when the first hasn't
-        // answered after a few seconds, use whichever answers first, and
-        // abort the rest. A read that fails fast (network error / 5xx) is
-        // retried right away, up to 3 attempts in all. Writes (PUT) are
-        // always sent once.
-        const JSONBIN_HEDGE_AFTER_MS = [3000, 4000]; // attempt 2 after 3s, attempt 3 4s after that
-        const JSONBIN_MAX_ATTEMPTS = JSONBIN_HEDGE_AFTER_MS.length + 1;
-        const JSONBIN_READ_TIMEOUT_MS = 45000;
+        // The API answers quickly, but gets a generous time limit so a slow
+        // connection is never mistaken for a failure.
+        const API_TIMEOUT_MS = 60000;
 
-        function jsonbinRead() {
-            // One URL per read, shared by its attempts, so the browser can
-            // reuse the CORS preflight between them.
-            const url = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest?timestamp=${Date.now()}`;
-            const maxAttempts = JSONBIN_MAX_ATTEMPTS;
-            return new Promise((resolve, reject) => {
-                const controllers = [];
-                let settled = false;
-                let launched = 0;
-                let failures = 0;
-                let noMoreAttempts = false; // set by a 4xx: don't send new attempts, but let ones in flight finish
-                let hedgeTimer = null;
-                let overallTimer = null;
-
-                const finish = (fn, value) => {
-                    if (settled) return;
-                    settled = true;
-                    clearTimeout(hedgeTimer);
-                    clearTimeout(overallTimer);
-                    controllers.forEach(c => { try { c.abort(); } catch (e) {} });
-                    fn(value);
-                };
-
-                const launch = () => {
-                    clearTimeout(hedgeTimer);
-                    if (settled || noMoreAttempts || launched >= maxAttempts) return;
-                    const n = launched++;
-                    const ctrl = new AbortController();
-                    controllers.push(ctrl);
-                    fetch(url, {
-                        headers: {
-                            'X-Access-Key': JSONBIN_API_KEY,
-                            'Cache-Control': 'no-cache'
-                        },
-                        signal: ctrl.signal
-                    })
-                        .then(response => {
-                            if (!response.ok) {
-                                const error = new Error('GET ' + response.status + ' ' + response.statusText);
-                                // 4xx (bad key, missing bin, rate limit) won't fix itself
-                                // on an immediate retry, so send no further attempts.
-                                error.final = response.status >= 400 && response.status < 500;
-                                throw error;
-                            }
-                            return response.json();
-                        })
-                        .then(data => finish(resolve, data))
-                        .catch(error => {
-                            if (settled) return;
-                            failures++;
-                            if (error.final) noMoreAttempts = true;
-                            if (!noMoreAttempts && launched < maxAttempts) {
-                                launch(); // failed fast (network error / 5xx) - try again now
-                            } else if (failures >= launched) {
-                                finish(reject, error); // nothing left in flight
-                            }
-                        });
-                    if (launched < maxAttempts) hedgeTimer = setTimeout(launch, JSONBIN_HEDGE_AFTER_MS[n]);
-                };
-
-                overallTimer = setTimeout(() => {
-                    finish(reject, new Error('JSONBin did not respond within ' + (JSONBIN_READ_TIMEOUT_MS / 1000) + 's'));
-                }, JSONBIN_READ_TIMEOUT_MS);
-
-                launch();
-            });
+        async function apiFetch(path, options) {
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), API_TIMEOUT_MS);
+            try {
+                return await fetch(DRAY_API + path, { ...options, signal: ctrl.signal });
+            } finally {
+                clearTimeout(timer);
+            }
         }
 
-        // ========================================
-        // Request queue (JSONBin API functions)
-        // ========================================
-
+        // A copy of the Recent requests list is kept in this browser, so the
+        // list still shows if the API can't be reached. It has its own name:
+        // the old 'rateRequests' copy is never read or written by this page.
         function readSavedRequests() {
             try {
-                const saved = JSON.parse(localStorage.getItem('rateRequests') || '[]');
+                const saved = JSON.parse(localStorage.getItem('recentRequestsV2') || '[]');
                 return Array.isArray(saved) ? saved : [];
             } catch (e) {
                 return [];
             }
         }
 
-        async function readQueueFromBin() {
-            const data = await jsonbinRead();
-            const record = data && data.record;
-            if (!record || typeof record !== 'object') throw new Error('Unexpected response from JSONBin');
-            const requests = record.requests == null ? [] : record.requests;
-            if (!Array.isArray(requests)) throw new Error('Unexpected queue contents in JSONBin');
-            try { localStorage.setItem('rateRequests', JSON.stringify(requests)); } catch (e) {}
-            return requests;
+        function saveRecentCopy(requests) {
+            try { localStorage.setItem('recentRequestsV2', JSON.stringify(requests)); } catch (e) {}
         }
 
-        // Pass { strict: true } before writing: it throws if JSONBin can't be
-        // reached, instead of falling back to the copy saved in this browser.
-        // That copy is only for showing Recent requests - it can be days old,
-        // and writing it back would erase requests other offices submitted
-        // since and bring back ones the admin has already processed.
-        async function fetchRequests(options) {
-            const strict = !!(options && options.strict);
-            if (!isJsonBinConfigured) {
-                return readSavedRequests();
-            }
-
-            if (strict) {
-                return readQueueFromBin();
-            }
-
+        // The newest requests (oldest first), as the API returns them for
+        // display. Falls back to the copy saved in this browser.
+        async function fetchRecentRequests() {
             try {
-                return await readQueueFromBin();
+                const response = await apiFetch('/queue/recent');
+                if (!response.ok) throw new Error('GET ' + response.status);
+                const data = await response.json();
+                const requests = data && data.record && data.record.requests;
+                if (!Array.isArray(requests)) throw new Error('Unexpected reply from the request queue');
+                saveRecentCopy(requests);
+                return requests;
             } catch (error) {
-                console.error('Error fetching from JSONBin:', error);
+                console.error('Error loading recent requests:', error);
                 return readSavedRequests();
             }
         }
 
-        async function saveRequests(requests) {
-            if (!isJsonBinConfigured) {
-                try { localStorage.setItem('rateRequests', JSON.stringify(requests)); } catch (e) {}
-                return true;
-            }
-
+        // Adds the request to the queue.
+        // -> { outcome: 'saved' | 'not-sent' | 'unknown', error?, recent? }
+        // 'not-sent' means nothing was written. Anything uncertain (no answer,
+        // the connection dropped) is 'unknown': the save may have happened,
+        // and resending the same request is safe - the queue never adds the
+        // same request (id) twice.
+        async function saveNewRequest(requestData) {
+            let reply = null;
             try {
-                const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Access-Key': JSONBIN_API_KEY,
-                        'X-Bin-Versioning': 'false'
-                    },
-                    body: JSON.stringify({ requests: requests })
+                const response = await apiFetch('/queue/append', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestData)
                 });
-                if (!response.ok) {
-                    console.error('JSONBin save error:', response.status, response.statusText);
-                    return false;
-                }
-                // Only update the saved copy once the write has landed, so
-                // Recent requests never shows a request that isn't in the queue.
-                try { localStorage.setItem('rateRequests', JSON.stringify(requests)); } catch (e) {}
-                return true;
+                reply = await response.json().catch(() => null);
             } catch (error) {
-                console.error('Error saving to JSONBin:', error);
-                return false;
+                console.error('Error submitting the request:', error);
             }
+            const outcome = reply && ['saved', 'not-sent', 'unknown'].includes(reply.outcome) ? reply.outcome : 'unknown';
+            const recent = reply && reply.record && Array.isArray(reply.record.requests) ? reply.record.requests : null;
+            return { outcome, error: reply && reply.error, recent };
         }
 
         // Fire-and-forget: a failed notification never blocks the submission.
@@ -760,9 +669,9 @@
             }).catch(error => console.error('ntfy notification failed:', error));
         }
 
-        // The last request whose save couldn't be confirmed ('failed' or
-        // 'unknown'). A failed save can still land later, so resending the
-        // same form reuses it instead of adding a duplicate.
+        // The last request whose save couldn't be confirmed ('unknown'). It may
+        // have landed, so resending the same form reuses it (and its id), which
+        // the queue never adds twice.
         let unconfirmedRequest = null;
 
         async function submitRequest() {
@@ -816,51 +725,29 @@
                 ? unconfirmedRequest
                 : { id: Date.now(), ...fields, timestamp: new Date().toISOString() };
 
-            let outcome;
-            try {
-                // Always add to the live queue, never to the saved copy (see
-                // fetchRequests). If it can't be read, nothing is written.
-                const requests = await fetchRequests({ strict: true });
-                if (requests.some(r => r && r.id === requestData.id)) {
-                    outcome = 'saved'; // an earlier try landed after all - don't add it twice
-                } else {
-                    requests.push(requestData);
-                    outcome = await saveRequests(requests) ? 'saved' : await checkRequestSaved(requestData.id);
-                }
-            } catch (error) {
-                console.error('Error reading the queue before submitting:', error);
-                // Nothing was written this time, but an earlier try may have been.
-                outcome = retry ? 'unknown' : 'not-sent';
-            }
+            const result = await saveNewRequest(requestData);
+            let outcome = result.outcome;
+            // Nothing was written this time, but an earlier try may have been.
+            if (outcome === 'not-sent' && retry) outcome = 'unknown';
 
             if (outcome === 'saved') {
                 unconfirmedRequest = null;
                 sendNewRequestNotification(requestData);
-                showSuccess();
+                showSuccess(result.recent);
             } else {
                 if (outcome !== 'not-sent') unconfirmedRequest = requestData;
                 // The form is left filled in so the request can be resent as is.
                 showError({
-                    'not-sent': "Couldn't reach the request queue, so nothing was submitted. Please try again.",
-                    'failed': "Your request couldn't be saved. Please try again.",
+                    // The queue's own reason (e.g. too many requests) when it gave one
+                    'not-sent': result.error
+                        ? result.error + ' Nothing was submitted.'
+                        : "Couldn't reach the request queue, so nothing was submitted. Please try again.",
                     'unknown': "We couldn't confirm your request was saved. Please try again in a minute - if it did go through, it won't be added twice."
                 }[outcome]);
             }
 
             submitBtn.disabled = false;
             submitBtn.textContent = 'Submit Request';
-        }
-
-        // After a failed save: a PUT can still land (e.g. the connection
-        // dropped after JSONBin got it), so check before reporting it as failed.
-        async function checkRequestSaved(id) {
-            try {
-                const requests = await fetchRequests({ strict: true });
-                return requests.some(r => r && r.id === id) ? 'saved' : 'failed';
-            } catch (error) {
-                console.error('Error checking whether the request was saved:', error);
-                return 'unknown';
-            }
         }
 
         // Stays up until the next submit, so it can't be missed.
@@ -873,7 +760,8 @@
             errorMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
-        function showSuccess() {
+        // recent: the Recent requests list the queue sent back with the save
+        function showSuccess(recent) {
             const successMsg = document.getElementById('successMessage');
             successMsg.classList.add('show');
 
@@ -889,14 +777,16 @@
                 successMsg.classList.remove('show');
             }, 4000);
 
-            loadMyRequests();
+            if (recent) {
+                saveRecentCopy(recent);
+                displayRequests(recent.slice(-10).reverse());
+            } else {
+                loadMyRequests();
+            }
         }
 
         async function loadMyRequests() {
-            const listDiv = document.getElementById('myRequestsList');
-            const countSpan = document.getElementById('requestCount');
-
-            const allRequests = await fetchRequests();
+            const allRequests = await fetchRecentRequests();
             // Show most recent 10 requests
             const recentRequests = allRequests.slice(-10).reverse();
 
@@ -926,7 +816,7 @@
                         <div class="request-meta">
                             Submitted ${date}
                             ${req.referenceNo ? ` • Ref: ${req.referenceNo}` : ''}
-                            ${req.additionalDetails ? ` • ${req.additionalDetails.substring(0, 50)}${req.additionalDetails.length > 50 ? '...' : ''}` : ''}
+                            ${req.additionalDetails ? ` • ${req.additionalDetails}` : ''}
                         </div>
                     </div>
                 `;
