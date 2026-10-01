@@ -509,6 +509,25 @@
                 localStorage.setItem('userOffice', this.value);
             });
 
+            // Prefill from the rate map's "Request a rate" links
+            // (?office=NYC&origin=Dallas&destination=Arlington%2C%20TX). Only values that
+            // exist in the dropdowns are applied; the office is not saved unless changed.
+            const params = new URLSearchParams(window.location.search);
+            const officeSelect = document.getElementById('office');
+            const pOffice = (params.get('office') || '').trim();
+            if (pOffice && Array.from(officeSelect.options).some(o => o.value === pOffice)) {
+                officeSelect.value = pOffice;
+            }
+            const pOrigin = (params.get('origin') || '').trim();
+            if (pOrigin && terminals.includes(pOrigin)) {
+                originSelect.value = pOrigin;
+                updateVendorsList(pOrigin);
+            }
+            const pDestination = (params.get('destination') || '').trim();
+            if (pDestination) {
+                document.getElementById('destination').value = pDestination.slice(0, 200);
+            }
+
             // Form submit handler
             document.getElementById('requestForm').addEventListener('submit', function(e) {
                 e.preventDefault();
